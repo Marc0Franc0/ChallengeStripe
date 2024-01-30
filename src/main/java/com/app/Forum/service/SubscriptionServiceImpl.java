@@ -33,6 +33,7 @@ public class SubscriptionServiceImpl implements SubscriptionService{
                             .startDate(LocalDate.now())
                             .endDate(LocalDate.now().plusDays(subscriptionType.get().getDurationDays()))
                             .subscriptionType(subscriptionType.get())
+                            .active(true)
                             .build();
             //Se actualiza la subscripción en el user
             userEntityService
