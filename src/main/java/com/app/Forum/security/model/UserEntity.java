@@ -1,18 +1,17 @@
 package com.app.Forum.security.model;
 
+import com.app.Forum.model.Payment;
 import com.app.Forum.model.Subscription;
 import com.app.Forum.model.SubscriptionType;
 import com.app.Forum.security.dto.PersonalData;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 //Clase la cual representa un usuario con sus propiedades (username,password,roles)
@@ -20,6 +19,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
+@Getter
 @Entity
 public class UserEntity implements UserDetails {
     @Id
@@ -40,6 +40,9 @@ public class UserEntity implements UserDetails {
     private PersonalData personalData;
     @OneToOne(cascade = CascadeType.ALL)
     private Subscription subscription;
+    @OneToMany(mappedBy = "user")
+    private List<Payment> payments;
+
     //Se obtienen los roles del usuario
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

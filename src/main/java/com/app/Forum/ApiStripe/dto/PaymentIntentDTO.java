@@ -1,9 +1,12 @@
 package com.app.Forum.ApiStripe.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class PaymentIntentDTO {
-    private Long amount;
-    private String currency;
+    public Long amount;
+    public String currency;
 }
