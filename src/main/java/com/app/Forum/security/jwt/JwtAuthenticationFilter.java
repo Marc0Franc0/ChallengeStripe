@@ -1,6 +1,8 @@
 package com.app.Forum.security.jwt;
 
+import com.app.Forum.security.dto.UserDataDTO;
 import com.app.Forum.security.model.UserEntity;
+import com.app.Forum.security.repository.UserRepository;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,19 +22,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /*Esta clase es un filtro de autenticación de Spring que se encarga de
     autenticar a los usuarios que soliciten utilizar la aplicación.*/
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     @Autowired
     JwtTokenProvider jwtTokenProvider;
-    //Método el cual intenta la autenticación de un usuario
-
 
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
         this.jwtTokenProvider = jwtTokenProvider;
     }
-
+    //Método el cual intenta la autenticación de un usuario
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request,
                                                 HttpServletResponse response)
@@ -76,17 +77,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         //Se establece el header de authorization en la respuesta de la solicitud con el contenido del token
         response.setHeader("Authorization",token);
 
-        //Se crea el body de la respuesta de la solicitud
-        Map<String, Object> httpResponse = new HashMap<>();
-        //token
-        httpResponse.put("token",token);
-        //Mensaje de información
-        httpResponse.put("Message","Correct authentication");
-        //Se envia el nombre de usuario autenticado
-        httpResponse.put("Username",user.getUsername());
+        Map<String, Object> body = createBody(token,user.getUsername());
 
         //Se establece en el response el body creado
-        response.getWriter().write(new ObjectMapper().writeValueAsString(httpResponse));
+        response.getWriter().write(new ObjectMapper().writeValueAsString(body));
         //Se establece el estado de la solicitud
         response.setStatus(HttpStatus.OK.value());
         //Se establece el tipo de contenido de la solicitud
@@ -94,5 +88,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         response.getWriter().flush();
 
         super.successfulAuthentication(request, response, chain, authResult);
+    }
+    //Método que construye el body de la petición exitosa
+    private Map<String, Object> createBody(String token,String username){
+        //Se crea el body de la respuesta de la solicitud
+        Map<String, Object> httpResponse = new HashMap<>();
+        //token
+        httpResponse.put("token",token);
+        return httpResponse;
     }
 }

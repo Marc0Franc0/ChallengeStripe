@@ -22,7 +22,10 @@ public class Subscription {
     private LocalDate startDate;
     private LocalDate endDate;
     private Boolean active;
+    @OneToOne(cascade = CascadeType.ALL)
+    private Payment payment;
     @ManyToOne
     @JoinColumn(name = "id_typeSub")
     private SubscriptionType subscriptionType;
+
 }

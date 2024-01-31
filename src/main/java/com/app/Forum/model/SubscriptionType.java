@@ -13,7 +13,7 @@ public class SubscriptionType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
-    private Double value;
+    private Long value;
     private Integer durationDays;
     @OneToMany(mappedBy = "subscriptionType")
     private List<Subscription> subscriptions;
