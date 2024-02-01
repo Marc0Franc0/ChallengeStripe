@@ -1,0 +1,10 @@
+<p *ngIf="errorMessage.length!=0" class="text-danger">{{errorMessage}}</p>
+<div *ngIf="userLoginOn">
+  <p><b>Firstname: </b>{{user?.firstName}}</p>
+  <p><b>Lastname: </b>{{user?.lastName}}</p>
+  <p><b>Email: </b>{{user?.username}}</p>
+  <p><b>Subcription type: </b>{{user?.subType}}</p>
+  <p><b>Subcription end: </b>{{user?.subEndDate}}</p>
+  <p><b>Subcription status: </b>{{user?.subStatus}}</p>
+
+</div>
