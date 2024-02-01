@@ -1,4 +1,4 @@
-# [ChallengeStripe](https://github.com/Marc0Franc0/ChallengeStripe#challengestripe)
+# [StripeChallenge](https://github.com/Marc0Franc0/StripeChallenge#stripechallenge)
 
 ## FrontendAngular
 
@@ -18,6 +18,10 @@
 
 Para construir y ejecutar la aplicación necesita:
 - [Node.js](https://nodejs.org/en/download/)
+  
+```shell
+npm install
+```
 
 ```shell
 ng serve
@@ -62,7 +66,6 @@ mvn spring-boot:run
 ```
 
 Dirigirse a:
-- [Documentación en formato JSON](localhost:8080/api/v3/api-docs)
 - [Documentación Swagger](http://localhost:8080/swagger-ui/index.html)
 
 ### Endpoints
