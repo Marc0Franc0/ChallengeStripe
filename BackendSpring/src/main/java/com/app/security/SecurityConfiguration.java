@@ -52,6 +52,7 @@ public class SecurityConfiguration {
                                     ("/swagger-ui.html","/v3/api-docs/**","/swagger-ui/**").permitAll();
                             auth.requestMatchers("/api/v1/auth/login","/api/v1/auth/register").permitAll();
                             auth.requestMatchers("/api/v1/subs/**").authenticated();
+                            auth.requestMatchers("/api/v1/subs/types/**").authenticated();
                             auth.requestMatchers("/api/v1/stripe/**").authenticated();
                             auth.requestMatchers("/api/v1/users/**").permitAll();
                             auth.anyRequest().authenticated();
