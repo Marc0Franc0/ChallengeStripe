@@ -9,12 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.Claims;
+import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
 
 //Clase la cual brinda utilidades respecto a un token
-@Component
+@Service
 @Slf4j
 public class JwtTokenProvider {
     @Value("${jwt.secret.key}")

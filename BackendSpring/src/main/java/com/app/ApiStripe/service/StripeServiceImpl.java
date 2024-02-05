@@ -12,6 +12,7 @@ import com.stripe.model.*;
 import com.stripe.param.PaymentIntentCancelParams;
 import com.stripe.param.PaymentIntentConfirmParams;
 import com.stripe.param.PaymentIntentCreateParams;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class StripeServiceImpl implements StripeService{
     @Value("${api.stripe.key.private}")
    private String stripeApiKey;
@@ -33,7 +35,7 @@ public class StripeServiceImpl implements StripeService{
         PaymentIntentCreateParams params =
                 PaymentIntentCreateParams.builder()
                         //Monto
-                        .setAmount(Long.valueOf(String.valueOf(paymentIntentDTO.getAmount())))
+                        .setAmount(paymentIntentDTO.getAmount())
                         //Moneda
                         .setCurrency(paymentIntentDTO.getCurrency())
                         .setAutomaticPaymentMethods(
@@ -58,11 +60,10 @@ public class StripeServiceImpl implements StripeService{
         //Se obtiene el usuario
         Optional<UserEntity> user = userEntityService.getUser(responseSub.getUsername());
         if(user.isPresent()){
-            //Se confirma el pago creado
             PaymentIntent paymentIntent = resource.confirm(params);
             //Se actualiza la subscripción de usuario
-            com.app.model.Subscription subSaved = user.get().getSubscription();
-           com.app.model.Subscription sub =
+            Subscription subSaved = user.get().getSubscription();
+            Subscription sub =
                     Subscription
                             .builder()
                             .id(subSaved.getId())
@@ -77,7 +78,7 @@ public class StripeServiceImpl implements StripeService{
                                     .user(user.get()).build())
                             .build();
             userEntityService.updateUserSub(user.get(),sub);
-            return paymentIntent;
+            return resource;
         }else{
             throw new RuntimeException("No se pudo confirmar el pago");
         }

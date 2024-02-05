@@ -9,6 +9,7 @@ import com.app.model.Subscription;
 import com.app.model.SubscriptionType;
 import com.app.repository.SubscriptionRepository;
 import com.app.security.model.UserEntity;
+import com.app.security.service.PaymentService;
 import com.app.security.service.UserEntityService;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
@@ -20,13 +21,15 @@ import java.util.Optional;
 @Service
 public class SubscriptionServiceImpl implements SubscriptionService{
     @Autowired
-    SubscriptionRepository subscriptionRepository;
+    private SubscriptionRepository subscriptionRepository;
     @Autowired
-    SubscriptionTypeService subscriptionTypeService;
+    private SubscriptionTypeService subscriptionTypeService;
     @Autowired
-    UserEntityService userEntityService;
+    private UserEntityService userEntityService;
     @Autowired
-    StripeService stripeService;
+    private StripeService stripeService;
+    @Autowired
+    private PaymentService paymentService;
 
     @Override
     public ResponseSub createSubscription(CreateSubDTO subscriptionDTO) throws StripeException {
@@ -35,7 +38,6 @@ public class SubscriptionServiceImpl implements SubscriptionService{
                 .getSubscriptionType(subscriptionDTO.getSubscriptionTypeName());
         Optional<UserEntity> user = userEntityService.getUser(subscriptionDTO.getUser());
         if (subscriptionType.isPresent() && user.isPresent()) {
-
             //Se crea el pago sin método de pago
             PaymentIntent paymentIntent = stripeService.createPaymenIntent
                     (PaymentIntentDTO
@@ -43,54 +45,31 @@ public class SubscriptionServiceImpl implements SubscriptionService{
                             .amount( subscriptionType.get().getValue())
                             .currency("usd")
                             .build());
-            //Se crea el pago con datos del pago sin método de pago
+            //Se crea el pago con datos del pago sin método de pago para guarda en db
             Payment payment =
-                    Payment.builder()
-                            .idStripe(paymentIntent.getId())
-                            .user(user.get())
-                            .status(paymentIntent.getStatus())
-                            .build();
-            //Se verifica que no exista una sub en el user
-            if((user.get().getSubscription() !=null)){
-                Subscription subSaved = user.get().getSubscription();
-                Subscription sub =
-                        Subscription
-                                .builder()
-                                .id(subSaved.getId())
-                                .subscriptionType(subscriptionType.get())
-                                .payment(payment)
-                                .build();
-                //Se actualiza la existente
-                userEntityService.updateUserSub(user.get(),sub);
-                //Se guarda la sub
-                subscriptionRepository.save(sub);
-            }else{
-                Subscription sub =
-                        Subscription
-                                .builder()
-                                .subscriptionType(subscriptionType.get())
-                                .payment(payment)
-                                .build();
-                //Se agrega una por primera vez
-                userEntityService
-                        .updateUserSub(user.get(), sub);
-                //Se guarda la sub
-                subscriptionRepository.save(sub);
-            }
-
+                    paymentService
+                            .createPayment
+                                            (paymentIntent.getId(),
+                                            user.get().getUsername(),
+                                            paymentIntent.getStatus());
+            //Se actualiza una sub o agrega una por primera vez
+            Subscription sub = updateOrCreate(user.get(),subscriptionType.get(),payment);
+            //Se guarda los datos de la sub
+            userEntityService.updateUserSub(user.get(),sub);
+            subscriptionRepository.save(sub);
             //Se retorna el id de pago para poder confirmar el pago y el username
             return ResponseSub.builder()
-                    .stripeId( paymentIntent.getId())
+                    .stripeId(paymentIntent.getId())
                     .username(user.get().getUsername())
                     .build();
         }else{
-            throw new RuntimeException("Error al crear la suscripción");
+            throw new RuntimeException("Error al crear la suscripción: usuario o tipo de suscripción no existentes");
         }
     }
 
 
     @Override
-    public Subscription updateSubscription(Long id, boolean active) {
+    public Subscription updateSubscriptionStatus(Long id, boolean active) {
         Optional<Subscription> subscription = getSubscription(id);
         if(subscription.isPresent()){
             //Se modifica el estado de la sub y se guarda
@@ -108,5 +87,29 @@ public class SubscriptionServiceImpl implements SubscriptionService{
         return subscriptionRepository.findById(id);
     }
 
+    public Subscription updateOrCreate(UserEntity user,
+                               SubscriptionType subscriptionType,
+                               Payment payment){
+        //Se verifica que no exista una sub en el user
+        if((user.getSubscription() !=null)){
+            Subscription subSaved = user.getSubscription();
+            Subscription sub =
+                    Subscription
+                            .builder()
+                            .id(subSaved.getId())
+                            .subscriptionType(subscriptionType)
+                            .payment(payment)
+                            .build();
 
+            return sub;
+        }else{
+            Subscription sub =
+                    Subscription
+                            .builder()
+                            .subscriptionType(subscriptionType)
+                            .payment(payment)
+                            .build();
+            return sub;
+        }
+    }
 }
