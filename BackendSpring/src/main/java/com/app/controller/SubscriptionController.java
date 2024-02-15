@@ -27,7 +27,7 @@ public class SubscriptionController {
             @ApiResponse(responseCode = "404", description = "Not found",
                     content = @Content)})
     @PostMapping("/")
-    public ResponseEntity<?> createSub(@RequestBody CreateSubDTO subscriptionDTO) throws StripeException {
+    public ResponseEntity<?> createSub(@RequestBody CreateSubDTO subscriptionDTO) throws Exception {
         ResponseSub stripeId =subscriptionService.createSubscription(subscriptionDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(stripeId);
     }

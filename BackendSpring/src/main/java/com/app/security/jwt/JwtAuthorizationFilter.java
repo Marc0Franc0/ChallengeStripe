@@ -1,19 +1,22 @@
 package com.app.security.jwt;
 
 import com.app.security.service.UserDetailsServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /*Esta clase es un filtro de autorización de Spring que se encarga de
     validar y procesar el token JWT en cada solicitud entrante.*/
@@ -23,6 +26,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     JwtTokenProvider jwtTokenProvider;
     @Autowired
     UserDetailsServiceImpl userDetailsService;
+
     @Override
     protected void doFilterInternal(
             // Solicitud entrante
@@ -31,15 +35,14 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             // Mecanismo para invocar el siguiente filtro en la siguiente cadena de filtros
             @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        //Obtención del header "Authorization" el cual contiene el token
+    ) throws IOException {
         String headerAuthorization = request.getHeader("Authorization");
-
         //Validación de contenido del token
-        if (
+
+        try{   if (
             //Se espera que no sea nulo y comienze con "Bearer "
-                headerAuthorization != null && headerAuthorization.startsWith("Bearer")
-        ) {
+                        headerAuthorization != null &&
+                        headerAuthorization.startsWith("Bearer")) {
             //substring que solo contiene solo el token
             String token = headerAuthorization.substring(7);
 
@@ -61,10 +64,22 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                 //Se establece la autenticación creada en el contexto de la aplicación
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
-        }
-
+}
         // Permite que la solicitud continue hacia el siguiente filtro en
         // la cadena de filtro establcida en la configuración
         filterChain.doFilter(request, response);
+    }  catch (Exception e){
+            //Se crea el body de la respuesta de la solicitud
+            Map<String, Object> error = new HashMap<>();
+            //atributos del response
+            error.put("Error message",e.getMessage());
+            error.put("Status code",HttpStatus.INTERNAL_SERVER_ERROR.value());
+
+            //Response
+            response.getWriter().write(new ObjectMapper().writeValueAsString(error));
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().flush();
+        }
     }
 }

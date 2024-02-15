@@ -7,6 +7,7 @@ import com.app.security.model.RoleEntity;
 import com.app.security.model.UserEntity;
 import com.app.security.repository.UserRepository;
 import com.app.model.Subscription;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
+@Slf4j
 public class UserEntityServiceImpl implements UserEntityService{
     @Autowired
     JwtTokenProvider jwtTokenProvider;
@@ -29,74 +31,110 @@ public class UserEntityServiceImpl implements UserEntityService{
     AuthenticationManager authenticationManager;
 
     public UserEntity registerUser( SignUpDTO authDTO) {
-        UserEntity userEntity =
-                UserEntity.builder()
-                        //nombre de usuario
-                        .username(authDTO.getUsername())
-                        //password encriptada
-                        .password(passwordEncoder.encode(authDTO.getPassword()))
-                        //roles del usuario el cual se establece como predeterminado USER
-                        .roles(
-                             Set.of(
-                                     RoleEntity.builder()
-                                             //Se le setea el rol de USER
-                                     .name(ERole.valueOf("USER"))
-                                     .build()))
-                        //Otros datos
-                        .personalData
-                                (new PersonalData(
-                                                authDTO.getFirstName(),
-                                                authDTO.getLastName(),
-                                                authDTO.getNewsletters()))
-                        .build();
+        UserEntity userEntity = null;
+        try {
+            userEntity =
+                    UserEntity.builder()
+                            //nombre de usuario
+                            .username(authDTO.getUsername())
+                            //password encriptada
+                            .password(passwordEncoder.encode(authDTO.getPassword()))
+                            //roles del usuario el cual se establece como predeterminado USER
+                            .roles(
+                                    Set.of(
+                                            RoleEntity.builder()
+                                                    //Se le setea el rol de USER
+                                                    .name(ERole.valueOf("USER"))
+                                                    .build()))
+                            //Otros datos
+                            .personalData
+                                    (new PersonalData(
+                                            authDTO.getFirstName(),
+                                            authDTO.getLastName(),
+                                            authDTO.getNewsletters()))
+                            .build();
 
-
-        return userRepository.save(userEntity);
+            return userRepository.save(userEntity);
+        } catch (Exception e) {
+            log.error("No se pudo registar el usuario con los datos ingresados:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+            throw new RuntimeException
+                    ("No se pudo registar el usuario con los datos ingresados: ".concat(e.getMessage()));
+        }
     }
-
     //Método para la creación de un usuario de seguridad de Spring
     public User createUserSecurity(UserEntity userEntity) {
-        return new User(
-                userEntity.getUsername(),
-                userEntity.getPassword(),
-                userEntity.isEnabled(),
-                userEntity.isAccountNonExpired(),
-                userEntity.isCredentialsNonExpired(),
-                userEntity.isAccountNonLocked(),
-                userEntity.getAuthorities());
+        try {
+            return new User(
+                    userEntity.getUsername(),
+                    userEntity.getPassword(),
+                    userEntity.isEnabled(),
+                    userEntity.isAccountNonExpired(),
+                    userEntity.isCredentialsNonExpired(),
+                    userEntity.isAccountNonLocked(),
+                    userEntity.getAuthorities());
+        }catch (Exception e){
+            log.error("No se pudo crear User de la clase User de Spring Security:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+            throw new RuntimeException
+                    ("No se pudo crear un User: ".concat(e.getMessage()));
+        }
     }
 
     public LoginResponseDTO authenticate(SignInDTO request) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-        UserDetails user=userRepository.findByUsername(request.getUsername()).orElseThrow();
+        try{authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                request.getUsername(), request.getPassword()));
         String token=jwtTokenProvider.generateAccessToken(request.getUsername());
-        return LoginResponseDTO.builder().token(token).build();
-
+        return LoginResponseDTO.builder().token(token).build();}
+        catch (Exception e){
+            log.error("No se pudo iniciar sesión con los datos ingresados:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+        throw new RuntimeException("No se pudo iniciar sesión con los datos ingresados: "
+                .concat(e.getMessage()));}
     }
     @Override
     public Optional<UserEntity> getUser(String username) {
-        return userRepository.findByUsername(username);
+        Optional<UserEntity> user = userRepository.findByUsername(username);
+       try{
+            return user;
+       }catch (Exception e){
+           log.error("No se pudo obtener los datos del usuario:, error: ".concat(e.getMessage()));
+           e.printStackTrace();
+           throw new RuntimeException("No se pudo obtener el usuario: ".concat(e.getMessage()));
+       }
+
     }
 
     //Se actualiza la sub del usuario
     @Override
     public UserEntity updateUserSub(UserEntity user, Subscription subscription) {
-        user.setSubscription(subscription);
+        try {
+            user.setSubscription(subscription);
         return userRepository.save(user);
+        }catch (Exception e){
+            log.error("No se pudo actualizar la suscripción del usuario:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+            throw new RuntimeException
+                    ("No se pudo actualizar la suscripción del usuario: " +e.getMessage());
+        }
     }
 
     @Override
     public UserDataDTO getUserData(String username) {
         Optional<UserEntity> user = userRepository.findByUsername(username);
-        if(user.isPresent()){
+        try{
         return createUserData(user.get());
+        }catch (Exception e){
+            log.error("No se pudo obtener los datos del usuario:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+            throw new RuntimeException("No se pudo obtener los datos del usuario: ".concat(e.getMessage()));
         }
-        throw new RuntimeException("No se pudo obtener el usuario");
     }
 
     @Override
     public UserDataDTO createUserData(UserEntity user) {
         UserDataDTO userDataDTO;
+        try{
         if(user.getSubscription()==null){
 
             userDataDTO= UserDataDTO
@@ -136,7 +174,13 @@ public class UserEntityServiceImpl implements UserEntityService{
                     .subEndDate(user.getSubscription().getEndDate().toString())
                     .build();
         }
-        return userDataDTO;
+        return userDataDTO;}
+        catch (Exception e){
+            log.error("No se pudo obtener los datos del usuario:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+            throw new RuntimeException("No se pudo obtener los datos del usuario: "
+                    .concat(e.getMessage()));
+        }
     }
 
 }

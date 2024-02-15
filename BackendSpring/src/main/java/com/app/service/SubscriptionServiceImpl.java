@@ -9,16 +9,17 @@ import com.app.model.Subscription;
 import com.app.model.SubscriptionType;
 import com.app.repository.SubscriptionRepository;
 import com.app.security.model.UserEntity;
-import com.app.security.service.PaymentService;
 import com.app.security.service.UserEntityService;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class SubscriptionServiceImpl implements SubscriptionService{
     @Autowired
     private SubscriptionRepository subscriptionRepository;
@@ -32,19 +33,21 @@ public class SubscriptionServiceImpl implements SubscriptionService{
     private PaymentService paymentService;
 
     @Override
-    public ResponseSub createSubscription(CreateSubDTO subscriptionDTO) throws StripeException {
+    public ResponseSub createSubscription(CreateSubDTO subscriptionDTO)  {
         //Se obtiene el tipo de sub y el user
         Optional<SubscriptionType> subscriptionType = subscriptionTypeService
                 .getSubscriptionType(subscriptionDTO.getSubscriptionTypeName());
         Optional<UserEntity> user = userEntityService.getUser(subscriptionDTO.getUser());
-        if (subscriptionType.isPresent() && user.isPresent()) {
+        try{
             //Se crea el pago sin método de pago
-            PaymentIntent paymentIntent = stripeService.createPaymenIntent
-                    (PaymentIntentDTO
-                            .builder()
-                            .amount( subscriptionType.get().getValue())
-                            .currency("usd")
-                            .build());
+            PaymentIntent paymentIntent = null;
+                paymentIntent = stripeService.createPaymenIntent
+                        (PaymentIntentDTO
+                                .builder()
+                                .amount( subscriptionType.get().getValue())
+                                .currency("usd")
+                                .build());
+
             //Se crea el pago con datos del pago sin método de pago para guarda en db
             Payment payment =
                     paymentService
@@ -62,8 +65,10 @@ public class SubscriptionServiceImpl implements SubscriptionService{
                     .stripeId(paymentIntent.getId())
                     .username(user.get().getUsername())
                     .build();
-        }else{
-            throw new RuntimeException("Error al crear la suscripción: usuario o tipo de suscripción no existentes");
+        }catch (Exception e){
+            log.error("No se pudo crear la suscripción:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+            throw new RuntimeException("No se pudo crear la suscripción: ".concat(e.getMessage()));
         }
     }
 
@@ -71,20 +76,29 @@ public class SubscriptionServiceImpl implements SubscriptionService{
     @Override
     public Subscription updateSubscriptionStatus(Long id, boolean active) {
         Optional<Subscription> subscription = getSubscription(id);
-        if(subscription.isPresent()){
+        try {
             //Se modifica el estado de la sub y se guarda
             subscription.get().setActive(active);
             return subscriptionRepository.save(subscription.get());
-        }else{
-            throw new RuntimeException("Suscripción no encontrada");
+        } catch (Exception e) {
+            log.error("No se pudo actualizar la suscripción:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+            throw new RuntimeException
+                    ("No se pudo actualizar la suscripción: ".concat(e.getMessage()));
         }
-
-
     }
-
     @Override
     public Optional<Subscription> getSubscription(Long id) {
-        return subscriptionRepository.findById(id);
+        Optional<Subscription> sub = subscriptionRepository.findById(id);
+         try{
+             return sub;
+         }catch (Exception e){
+             log.error("No se pudo obtener la suscripción:, error: ".concat(e.getMessage()));
+             e.printStackTrace();
+             throw new RuntimeException
+                     ("No se pudo obtener la suscripción: ".concat(e.getMessage()));
+         }
+
     }
 
     public Subscription updateOrCreate(UserEntity user,

@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Service
 public interface SubscriptionService {
-    ResponseSub createSubscription(CreateSubDTO subscriptionDTO) throws StripeException;
+    ResponseSub createSubscription(CreateSubDTO subscriptionDTO) throws Exception;
     Subscription updateSubscriptionStatus(Long id, boolean active);
     Optional<Subscription> getSubscription(Long id);
     Subscription updateOrCreate(UserEntity user,

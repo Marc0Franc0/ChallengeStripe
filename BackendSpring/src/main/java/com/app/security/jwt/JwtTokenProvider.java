@@ -56,6 +56,7 @@ public class JwtTokenProvider {
         }catch (Exception e){
             log.error("Token inválido, error: ".concat(e.getMessage()));
             e.printStackTrace();
+            throw new RuntimeException("Token inválido, error: ".concat(e.getMessage()));
 
         }
         return isValid;

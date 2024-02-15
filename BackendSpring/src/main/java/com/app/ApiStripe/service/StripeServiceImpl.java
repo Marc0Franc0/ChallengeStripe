@@ -28,29 +28,38 @@ public class StripeServiceImpl implements StripeService{
     @Autowired
     UserEntityService userEntityService;
     //Método para crear pago
-    public PaymentIntent createPaymenIntent(PaymentIntentDTO paymentIntentDTO)
-            throws StripeException {
+    public PaymentIntent createPaymenIntent(PaymentIntentDTO paymentIntentDTO){
         Stripe.apiKey = stripeApiKey;
-        //Se crea el pago
-        PaymentIntentCreateParams params =
-                PaymentIntentCreateParams.builder()
-                        //Monto
-                        .setAmount(paymentIntentDTO.getAmount())
-                        //Moneda
-                        .setCurrency(paymentIntentDTO.getCurrency())
-                        .setAutomaticPaymentMethods(
-                                PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                        .setEnabled(true)
-                                        .build())
-                        .build();
-        //Se retorna el pago creado
-        return PaymentIntent.create(params);
+        try {
+            //Se crea el pago
+            PaymentIntentCreateParams params =
+                    PaymentIntentCreateParams.builder()
+                            //Monto
+                            .setAmount(paymentIntentDTO.getAmount())
+                            //Moneda
+                            .setCurrency(paymentIntentDTO.getCurrency())
+                            .setAutomaticPaymentMethods(
+                                    PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                            .setEnabled(true)
+                                            .build())
+                            .build();
+            //Se retorna el pago creado
+            return PaymentIntent.create(params);
+        }catch (Exception e){
+            log.error("No se pudo crear el pago de suscripción:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+            throw new RuntimeException
+                    ("No se pudo crear el pago de suscripción: ".concat(e.getMessage()));
+        }
     }
     //Método para confirmar pago
-    public PaymentIntent confirmPayment(ResponseSub responseSub) throws StripeException {
+    public PaymentIntent confirmPayment(ResponseSub responseSub) {
         Stripe.apiKey = stripeApiKey;
         //Se obtiene el pago con su id
-        PaymentIntent resource = PaymentIntent.retrieve(responseSub.getStripeId());
+        PaymentIntent resource = null;
+        try {
+            resource = PaymentIntent.retrieve(responseSub.getStripeId());
+
         //Se crea la confirmación del pago
         PaymentIntentConfirmParams params =
                 PaymentIntentConfirmParams.builder()
@@ -59,8 +68,8 @@ public class StripeServiceImpl implements StripeService{
                         .build();
         //Se obtiene el usuario
         Optional<UserEntity> user = userEntityService.getUser(responseSub.getUsername());
-        if(user.isPresent()){
-            PaymentIntent paymentIntent = resource.confirm(params);
+            PaymentIntent paymentIntent = null;
+                paymentIntent = resource.confirm(params);
             //Se actualiza la subscripción de usuario
             Subscription subSaved = user.get().getSubscription();
             Subscription sub =
@@ -79,19 +88,31 @@ public class StripeServiceImpl implements StripeService{
                             .build();
             userEntityService.updateUserSub(user.get(),sub);
             return resource;
-        }else{
-            throw new RuntimeException("No se pudo confirmar el pago");
-        }
+        }catch(Exception e){
+            log.error("No se pudo confirmar el pago de suscripción:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+            throw new RuntimeException
+                    ("No se pudo confirmar el pago de suscripción: ".concat(e.getMessage()));
+            }
 
     }
     //Método para cancelar pago
-    public PaymentIntent cancelPayment(String id) throws StripeException {
+    public PaymentIntent cancelPayment(String id){
         Stripe.apiKey = stripeApiKey;
         //Se obtiene el pago con su id
-        PaymentIntent resource = PaymentIntent.retrieve(id);
+
+        PaymentIntent resource = null;
+        try {
+            resource = PaymentIntent.retrieve(id);
         //Se crea la cancelación del pago
-        PaymentIntentCancelParams params = PaymentIntentCancelParams.builder().build();
+            PaymentIntentCancelParams params = PaymentIntentCancelParams.builder().build();
         //Se retorna la cancelación
-        return resource.cancel(params);
+            return resource.cancel(params);
+        }catch (StripeException e) {
+            log.error("No se pudo cancelar el pago de suscripción:, error: ".concat(e.getMessage()));
+            e.printStackTrace();
+            throw new RuntimeException
+                    ("No se pudo cancelar el pago de suscripción:".concat(e.getMessage()));
+        }
     }
 }
