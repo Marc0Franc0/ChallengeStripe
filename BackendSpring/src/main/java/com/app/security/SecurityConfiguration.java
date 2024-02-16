@@ -1,9 +1,9 @@
 package com.app.security;
 
 import com.app.security.jwt.JwtAuthorizationFilter;
-import com.app.security.jwt.JwtTokenProvider;
 import com.app.security.service.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,19 +26,16 @@ public class SecurityConfiguration {
     private String clientAngular;
     @Autowired
     UserDetailsServiceImpl userDetailsService;
-    @Autowired
-    JwtTokenProvider jwtTokenProvider;
-    @Autowired
-    JwtAuthorizationFilter jwtAuthorizationFilter;
+
     /*
      * Se establece una cadena de filtros de seguridad en toda la aplicacion
      * Aquí se determinan los permisos según los roles de usuario para acceder a la
      * aplicación y demas configuraciones
      */
     @Bean
-    SecurityFilterChain securityFilterChain (HttpSecurity http,
-                                             AuthenticationManager authenticationManager)
+    SecurityFilterChain securityFilterChain (HttpSecurity http, AuthenticationManager authenticationManager)
     throws Exception{
+
         return http
                 // Se deshabilita Cross-site request forgery
                 .csrf(config->config.disable())
@@ -58,7 +55,7 @@ public class SecurityConfiguration {
                             auth.anyRequest().authenticated();
                         })
                 //Filtro creado el cual es necesario para autorizar utilizando un token
-                .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
     //Objeto el cual se encarga de la encriptación de contraseñas
@@ -66,6 +63,11 @@ public class SecurityConfiguration {
     PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
+    @Bean
+    public JwtAuthorizationFilter jwtAuthorizationFilter(){
+        return new JwtAuthorizationFilter();
+    }
+
     //Este objeto se encarga de la administración de la autenticación de los usuarios
     @Bean
     AuthenticationManager authenticationManager(HttpSecurity httpSecurity,PasswordEncoder passwordEncoder)
@@ -95,4 +97,6 @@ public class SecurityConfiguration {
         };
 
     }
+
+
     }

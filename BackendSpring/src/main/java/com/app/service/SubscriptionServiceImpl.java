@@ -12,14 +12,12 @@ import com.app.security.model.UserEntity;
 import com.app.security.service.UserEntityService;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
-@Slf4j
 public class SubscriptionServiceImpl implements SubscriptionService{
     @Autowired
     private SubscriptionRepository subscriptionRepository;
@@ -66,8 +64,6 @@ public class SubscriptionServiceImpl implements SubscriptionService{
                     .username(user.get().getUsername())
                     .build();
         }catch (Exception e){
-            log.error("No se pudo crear la suscripción:, error: ".concat(e.getMessage()));
-            e.printStackTrace();
             throw new RuntimeException("No se pudo crear la suscripción: ".concat(e.getMessage()));
         }
     }
@@ -81,8 +77,6 @@ public class SubscriptionServiceImpl implements SubscriptionService{
             subscription.get().setActive(active);
             return subscriptionRepository.save(subscription.get());
         } catch (Exception e) {
-            log.error("No se pudo actualizar la suscripción:, error: ".concat(e.getMessage()));
-            e.printStackTrace();
             throw new RuntimeException
                     ("No se pudo actualizar la suscripción: ".concat(e.getMessage()));
         }
@@ -93,8 +87,6 @@ public class SubscriptionServiceImpl implements SubscriptionService{
          try{
              return sub;
          }catch (Exception e){
-             log.error("No se pudo obtener la suscripción:, error: ".concat(e.getMessage()));
-             e.printStackTrace();
              throw new RuntimeException
                      ("No se pudo obtener la suscripción: ".concat(e.getMessage()));
          }

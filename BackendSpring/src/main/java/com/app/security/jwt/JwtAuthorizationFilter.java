@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,19 +15,22 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /*Esta clase es un filtro de autorización de Spring que se encarga de
     validar y procesar el token JWT en cada solicitud entrante.*/
-@Component
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
     @Autowired
     JwtTokenProvider jwtTokenProvider;
     @Autowired
     UserDetailsServiceImpl userDetailsService;
-
+    @Autowired
+    @Qualifier("handlerExceptionResolver")
+    private HandlerExceptionResolver exceptionResolver;
     @Override
     protected void doFilterInternal(
             // Solicitud entrante
@@ -69,17 +73,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         // la cadena de filtro establcida en la configuración
         filterChain.doFilter(request, response);
     }  catch (Exception e){
-            //Se crea el body de la respuesta de la solicitud
-            Map<String, Object> error = new HashMap<>();
-            //atributos del response
-            error.put("Error message",e.getMessage());
-            error.put("Status code",HttpStatus.INTERNAL_SERVER_ERROR.value());
-
-            //Response
-            response.getWriter().write(new ObjectMapper().writeValueAsString(error));
-            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().flush();
+            exceptionResolver.resolveException(request,response,null,e);
         }
     }
 }

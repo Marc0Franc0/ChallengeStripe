@@ -12,7 +12,6 @@ import com.stripe.model.*;
 import com.stripe.param.PaymentIntentCancelParams;
 import com.stripe.param.PaymentIntentConfirmParams;
 import com.stripe.param.PaymentIntentCreateParams;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,6 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Service
-@Slf4j
 public class StripeServiceImpl implements StripeService{
     @Value("${api.stripe.key.private}")
    private String stripeApiKey;
@@ -46,8 +44,6 @@ public class StripeServiceImpl implements StripeService{
             //Se retorna el pago creado
             return PaymentIntent.create(params);
         }catch (Exception e){
-            log.error("No se pudo crear el pago de suscripción:, error: ".concat(e.getMessage()));
-            e.printStackTrace();
             throw new RuntimeException
                     ("No se pudo crear el pago de suscripción: ".concat(e.getMessage()));
         }
@@ -89,8 +85,6 @@ public class StripeServiceImpl implements StripeService{
             userEntityService.updateUserSub(user.get(),sub);
             return resource;
         }catch(Exception e){
-            log.error("No se pudo confirmar el pago de suscripción:, error: ".concat(e.getMessage()));
-            e.printStackTrace();
             throw new RuntimeException
                     ("No se pudo confirmar el pago de suscripción: ".concat(e.getMessage()));
             }
@@ -109,8 +103,6 @@ public class StripeServiceImpl implements StripeService{
         //Se retorna la cancelación
             return resource.cancel(params);
         }catch (StripeException e) {
-            log.error("No se pudo cancelar el pago de suscripción:, error: ".concat(e.getMessage()));
-            e.printStackTrace();
             throw new RuntimeException
                     ("No se pudo cancelar el pago de suscripción:".concat(e.getMessage()));
         }

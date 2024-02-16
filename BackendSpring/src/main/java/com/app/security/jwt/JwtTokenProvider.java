@@ -5,7 +5,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.Claims;
@@ -16,7 +15,6 @@ import java.util.Date;
 
 //Clase la cual brinda utilidades respecto a un token
 @Service
-@Slf4j
 public class JwtTokenProvider {
     @Value("${jwt.secret.key}")
     private String secretKey;
@@ -54,8 +52,6 @@ public class JwtTokenProvider {
             getAllClaims(token);
             isValid=true;
         }catch (Exception e){
-            log.error("Token inválido, error: ".concat(e.getMessage()));
-            e.printStackTrace();
             throw new RuntimeException("Token inválido, error: ".concat(e.getMessage()));
 
         }
